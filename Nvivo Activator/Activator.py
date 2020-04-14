@@ -1,8 +1,8 @@
 import PySimpleGUI as sg      
 import subprocess      
 import xml.etree.ElementTree as ET
-import xml.dom.minidom
-import tempfile
+from tempfile import mkstemp
+import os
 
 NVIVO = r'C:\Program Files\QSR\NVivo 12\nvivo'
 SERIAL = "NVT12-KZ000-ZG220-RSITC-0BVH9"
@@ -59,21 +59,38 @@ window = sg.Window('NVIVO Activation', layout)
 while True:      
   (event, values) = window.read()      
   if event == 'EXIT'  or event is None:      
-      break # exit button clicked      
+      break # exit button clicked    
+      
   if event == 'Replace':
     xml = createXML(fields=fields_list,data=values)
-    with open('output.xml', 'wb') as f:
+    
+    tempf, fname = mkstemp(text=True)
+    print(tempf,fname)
+    with open(fname, 'wb') as f:
         f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>');
         xml.write(f, xml_declaration=False, encoding='utf-8')
-    print(NVIVO,"-i",SERIAL,"-a",ACTIVATION)
-    #ExecuteCommandSubprocess(NVIVO,"-i",SERIAL,"-a",ACTIVATION)
+        
+    print(NVIVO,"-i",SERIAL,"-a",fname)
+    #ExecuteCommandSubprocess(NVIVO,"-i",SERIAL,"-a",fname)
+    
+    os.close(tempf)
+    os.remove(fname)
+    
   elif event == 'Activate':
     xml = createXML(fields=fields_list,data=values)
-    with open('output.xml', 'wb') as f:
+    
+    tempf, fname = mkstemp(text=True)
+    print(tempf,fname)
+    with open(fname, 'wb') as f:
         f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>');
         xml.write(f, xml_declaration=False, encoding='utf-8')
-    print(NVIVO,"-a",ACTIVATION)
-    #ExecuteCommandSubprocess(NVIVO,"-a",ACTIVATION)
+        
+    print(NVIVO,"-a",fname)
+    #ExecuteCommandSubprocess(NVIVO,"-a",fname)
+    
+    os.close(tempf)
+    os.remove(fname)
+    
   elif event == 'Deactivate':
     print(NVIVO,"-deactivate")
     #ExecuteCommandSubprocess(NVIVO,"-deactivate")
