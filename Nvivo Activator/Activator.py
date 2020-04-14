@@ -1,8 +1,12 @@
 import PySimpleGUI as sg      
 import subprocess      
 import xml.etree.ElementTree as ET
+import xml.dom.minidom
+import tempfile
 
-NVIVO = r"C:\Program Files\QSR\NVivo 12\nvivo"
+NVIVO = r'C:\Program Files\QSR\NVivo 12\nvivo'
+SERIAL = "aa"
+ACTIVATION = "output.xml"
 
 # Please check Demo programs for better examples of launchers      
 def ExecuteCommandSubprocess(command, *args):      
@@ -25,7 +29,7 @@ def createXML(fields=None,data=None):
         child = ET.SubElement(pointer,f_key)
         child.text = data[f_key]
     return tree
-
+    
 fields_list = (  ( 'FirstName','First Name*',True),
             ( 'LastName','Last Name*',True),
             ( 'Email','Email*',False),
@@ -58,5 +62,7 @@ while True:
       break # exit button clicked      
   if event == 'Activate':
     xml = createXML(fields=fields_list,data=values)
-    xml.write('output.xml')
-      #ExecuteCommandSubprocess(NVIVO)   
+    with open('output.xml', 'wb') as f:
+        f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>');
+        xml.write(f, xml_declaration=False, encoding='utf-8')
+    ExecuteCommandSubprocess(NVIVO,"-i",SERIAL,"-a",ACTIVATION)   
