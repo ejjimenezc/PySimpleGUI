@@ -1,6 +1,6 @@
 import PySimpleGUI as sg      
 import subprocess      
-from xml.dom import minidom
+from lxml import etree
 
 NVIVO = r"C:\Program Files\QSR\NVivo 12\nvivo"
 
@@ -16,7 +16,9 @@ def ExecuteCommandSubprocess(command, *args):
     except:      
         pass      
 
-fields = (  ( 'FirstName','First Name*',True),
+
+
+fields_list = (  ( 'FirstName','First Name*',True),
             ( 'LastName','Last Name*',True),
             ( 'Email','Email*',False),
             ( 'Phone','Phone',False),
@@ -32,29 +34,13 @@ fields = (  ( 'FirstName','First Name*',True),
             ( 'State','State',False) )
 
 
-layout = [
-    [sg.Text('Please enter your Activation Data')],
-    [sg.Text('First Name*', size=(15, 1)), sg.InputText()],
-    [sg.Text('Last Name*', size=(15, 1)), sg.InputText()],
-    [sg.Text('Email*', size=(15, 1)), sg.InputText()],
-    [sg.Text('Phone', size=(15, 1)), sg.InputText()],
-    [sg.Text('Fax', size=(15, 1)), sg.InputText()],
-    [sg.Text('Job Title', size=(15, 1)), sg.InputText()],
-    [sg.Text('Sector', size=(15, 1)), sg.InputText()],
-    [sg.Text('Industry', size=(15, 1)), sg.InputText()],
-    [sg.Text('Role', size=(15, 1)), sg.InputText()],
-    [sg.Text('Department', size=(15, 1)), sg.InputText()],
-    [sg.Text('Organization', size=(15, 1)), sg.InputText()],
-    [sg.Text('City', size=(15, 1)), sg.InputText()],
-    [sg.Text('Country*', size=(15, 1)), sg.InputText()],
-    [sg.Text('State', size=(15, 1)), sg.InputText()],
-    [sg.Text('Script output....', size=(20, 1))],      
-    [sg.Output(size=(88, 10))],      
-    [sg.Button('Activate'), sg.Button('EXIT')],    
-        ]      
+layout = []
+layout.append( [sg.Text('Please enter your Activation Data')] )
+layout.extend( [ [ sg.Text(field[1],size=(15, 1)), sg.InputText(key=field[0])] for field in fields_list ] )
+layout.extend( [ [sg.Output(size=(88, 10))],      
+                 [sg.Button('Activate'), sg.Button('EXIT')] ] )
 
-
-window = sg.Window('Script launcher', layout)      
+window = sg.Window('NVIVO Activation', layout)      
 
 # ---===--- Loop taking in user input and using it to call scripts --- #      
 
@@ -64,6 +50,4 @@ while True:
       break # exit button clicked      
   if event == 'Activate':
     print(values)
-    text_input = values[0]    
-    sg.popup('You entered', text_input)
       #ExecuteCommandSubprocess(NVIVO)   
