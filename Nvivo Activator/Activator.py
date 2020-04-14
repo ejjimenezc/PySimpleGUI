@@ -5,7 +5,7 @@ import xml.dom.minidom
 import tempfile
 
 NVIVO = r'C:\Program Files\QSR\NVivo 12\nvivo'
-SERIAL = "aa"
+SERIAL = "NVT12-KZ000-ZG220-RSITC-0BVH9"
 ACTIVATION = "output.xml"
 
 # Please check Demo programs for better examples of launchers      
@@ -50,7 +50,7 @@ layout = []
 layout.append( [sg.Text('Please enter your Activation Data')] )
 layout.extend( [ [ sg.Text(field[1],size=(15, 1)), sg.InputText(key=field[0])] for field in fields_list ] )
 layout.extend( [ [sg.Output(size=(88, 10))],      
-                 [sg.Button('Activate'), sg.Button('EXIT')] ] )
+                 [sg.Button('Replace'),sg.Button('Activate'), sg.Button('Deactivate'), sg.Button('EXIT')] ] )
 
 window = sg.Window('NVIVO Activation', layout)      
 
@@ -60,9 +60,20 @@ while True:
   (event, values) = window.read()      
   if event == 'EXIT'  or event is None:      
       break # exit button clicked      
-  if event == 'Activate':
+  if event == 'Replace':
     xml = createXML(fields=fields_list,data=values)
     with open('output.xml', 'wb') as f:
         f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>');
         xml.write(f, xml_declaration=False, encoding='utf-8')
-    ExecuteCommandSubprocess(NVIVO,"-i",SERIAL,"-a",ACTIVATION)   
+    print(NVIVO,"-i",SERIAL,"-a",ACTIVATION)
+    #ExecuteCommandSubprocess(NVIVO,"-i",SERIAL,"-a",ACTIVATION)
+  elif event == 'Activate':
+    xml = createXML(fields=fields_list,data=values)
+    with open('output.xml', 'wb') as f:
+        f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>');
+        xml.write(f, xml_declaration=False, encoding='utf-8')
+    print(NVIVO,"-a",ACTIVATION)
+    #ExecuteCommandSubprocess(NVIVO,"-a",ACTIVATION)
+  elif event == 'Deactivate':
+    print(NVIVO,"-deactivate")
+    #ExecuteCommandSubprocess(NVIVO,"-deactivate")
