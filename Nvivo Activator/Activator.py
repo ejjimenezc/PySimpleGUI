@@ -1,10 +1,16 @@
-import PySimpleGUI as sg      
-import subprocess      
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.fernet import Fernet
 import xml.etree.ElementTree as ET
 from tempfile import mkstemp
+import PySimpleGUI as sg      
+import subprocess   
+import base64   
 import os
 
 NVIVO = r'C:\Program Files\QSR\NVivo 12\nvivo'
+KEY = "9aSa-nUrp21l7I0FQcBHrtinmaiB56G7-ZXzJTNpjj8="
 
 # Please check Demo programs for better examples of launchers      
 def ExecuteCommandSubprocess(command, *args):      
@@ -16,7 +22,12 @@ def ExecuteCommandSubprocess(command, *args):
         if err:      
             print(err.decode("utf-8"))      
     except:      
-        pass      
+        pass     
+
+def decrypt(token):
+    f = Fernet(KEY.encode())
+    msg = f.decrypt(token.encode()).decode()
+    return msg
 
 def createXML(fields=None,data=None):
     tree = ET.ElementTree(ET.Element('Activation'))
@@ -28,20 +39,20 @@ def createXML(fields=None,data=None):
         child.text = data[f_key]
     return tree
     
-fields_list = ( ( 'FirstName','First Name*',True),
-            ( 'LastName','Last Name*',True),
-            ( 'Email','Email*',False),
-            ( 'Phone','Phone',False),
-            ( 'Fax','Fax',False),
-            ( 'JobTitle','Job Title',False),
-            ( 'Sector','Sector',False),
-            ( 'Industry','Industry',False),
-            ( 'Role','Role',False),
-            ( 'Department','Department',False),
-            ( 'Organization','Organization',False),
-            ( 'City','City',False),
-            ( 'Country','Country',True),
-            ( 'State','State',False) )
+fields_list =   ( ( 'FirstName','First Name*',True),
+                ( 'LastName','Last Name*',True),
+                ( 'Email','Email*',False),
+                ( 'Phone','Phone',False),
+                ( 'Fax','Fax',False),
+                ( 'JobTitle','Job Title',False),
+                ( 'Sector','Sector',False),
+                ( 'Industry','Industry',False),
+                ( 'Role','Role',False),
+                ( 'Department','Department',False),
+                ( 'Organization','Organization',False),
+                ( 'City','City',False),
+                ( 'Country','Country',True),
+                ( 'State','State',False) )
 
 
 layout = []
@@ -67,13 +78,14 @@ while True:
     tempf, fname = mkstemp(text=True)
     print(tempf,fname)
     with open(fname, 'wb') as f:
-        f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>');
+        f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
         xml.write(f, xml_declaration=False, encoding='utf-8')
         
-    print(NVIVO,"-i",serial,"-a",fname)
-    #ExecuteCommandSubprocess(NVIVO,"-i",serial,"-a",fname)
+    print(NVIVO,"-i",decrypt(serial),"-a",fname)
     
     os.close(tempf)
+    ExecuteCommandSubprocess(NVIVO,"-i",serial,"-a",fname)
+    
     os.remove(fname)
     
   elif event == 'Activate':
@@ -82,15 +94,15 @@ while True:
     tempf, fname = mkstemp(text=True)
     print(tempf,fname)
     with open(fname, 'wb') as f:
-        f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>');
+        f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
         xml.write(f, xml_declaration=False, encoding='utf-8')
         
     print(NVIVO,"-a",fname)
-    #ExecuteCommandSubprocess(NVIVO,"-a",fname)
+    ExecuteCommandSubprocess(NVIVO,"-a",fname)
     
     os.close(tempf)
     os.remove(fname)
     
   elif event == 'Deactivate':
     print(NVIVO,"-deactivate")
-    #ExecuteCommandSubprocess(NVIVO,"-deactivate")
+    ExecuteCommandSubprocess(NVIVO,"-deactivate")
