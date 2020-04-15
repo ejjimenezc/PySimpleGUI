@@ -5,8 +5,6 @@ from tempfile import mkstemp
 import os
 
 NVIVO = r'C:\Program Files\QSR\NVivo 12\nvivo'
-SERIAL = "NVT12-KZ000-ZG220-RSITC-0BVH9"
-ACTIVATION = "output.xml"
 
 # Please check Demo programs for better examples of launchers      
 def ExecuteCommandSubprocess(command, *args):      
@@ -30,7 +28,7 @@ def createXML(fields=None,data=None):
         child.text = data[f_key]
     return tree
     
-fields_list = (  ( 'FirstName','First Name*',True),
+fields_list = ( ( 'FirstName','First Name*',True),
             ( 'LastName','Last Name*',True),
             ( 'Email','Email*',False),
             ( 'Phone','Phone',False),
@@ -49,6 +47,7 @@ fields_list = (  ( 'FirstName','First Name*',True),
 layout = []
 layout.append( [sg.Text('Please enter your Activation Data')] )
 layout.extend( [ [ sg.Text(field[1],size=(15, 1)), sg.InputText(key=field[0])] for field in fields_list ] )
+layout.append( [sg.Text('Serial data',size=(15, 1)),sg.InputText(key='serial')] )
 layout.extend( [ [sg.Output(size=(88, 10))],      
                  [sg.Button('Replace'),sg.Button('Activate'), sg.Button('Deactivate'), sg.Button('EXIT')] ] )
 
@@ -57,11 +56,12 @@ window = sg.Window('NVIVO Activation', layout)
 # ---===--- Loop taking in user input and using it to call scripts --- #      
 
 while True:      
-  (event, values) = window.read()      
+  (event, values) = window.read()
   if event == 'EXIT'  or event is None:      
       break # exit button clicked    
       
   if event == 'Replace':
+    serial = values["serial"]
     xml = createXML(fields=fields_list,data=values)
     
     tempf, fname = mkstemp(text=True)
@@ -70,8 +70,8 @@ while True:
         f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>');
         xml.write(f, xml_declaration=False, encoding='utf-8')
         
-    print(NVIVO,"-i",SERIAL,"-a",fname)
-    #ExecuteCommandSubprocess(NVIVO,"-i",SERIAL,"-a",fname)
+    print(NVIVO,"-i",serial,"-a",fname)
+    #ExecuteCommandSubprocess(NVIVO,"-i",serial,"-a",fname)
     
     os.close(tempf)
     os.remove(fname)
