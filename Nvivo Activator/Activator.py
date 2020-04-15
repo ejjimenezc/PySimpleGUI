@@ -16,7 +16,8 @@ KEY = "9aSa-nUrp21l7I0FQcBHrtinmaiB56G7-ZXzJTNpjj8="
 def ExecuteCommandSubprocess(command, *args):      
     try:      
         sp = subprocess.Popen([command, *args], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)      
-        out, err = sp.communicate()      
+        out, err = sp.communicate()    
+        print(" ".join(sp.args)) 
         if out:      
             print(out.decode("utf-8"))      
         if err:      
@@ -76,15 +77,17 @@ while True:
     xml = createXML(fields=fields_list,data=values)
     
     tempf, fname = mkstemp(text=True)
-    print(tempf,fname)
+    os.close(tempf)
+    
     with open(fname, 'wb') as f:
         f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
         xml.write(f, xml_declaration=False, encoding='utf-8')
         
-    print(NVIVO,"-i",decrypt(serial),"-a",fname)
-    
-    os.close(tempf)
-    ExecuteCommandSubprocess(NVIVO,"-i",serial,"-a",fname)
+    lic = decrypt(serial)
+
+    #print(NVIVO,"-i",lic,"-a",fname)
+
+    ExecuteCommandSubprocess(NVIVO,"-i",lic,"-a",fname)
     
     os.remove(fname)
     
@@ -93,16 +96,17 @@ while True:
     
     tempf, fname = mkstemp(text=True)
     print(tempf,fname)
+    os.close(tempf)
+    
     with open(fname, 'wb') as f:
         f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
         xml.write(f, xml_declaration=False, encoding='utf-8')
         
-    print(NVIVO,"-a",fname)
+    #print(NVIVO,"-a",fname)
     ExecuteCommandSubprocess(NVIVO,"-a",fname)
     
-    os.close(tempf)
     os.remove(fname)
     
   elif event == 'Deactivate':
-    print(NVIVO,"-deactivate")
+    #print(NVIVO,"-deactivate")
     ExecuteCommandSubprocess(NVIVO,"-deactivate")

@@ -18,7 +18,7 @@ kdf = PBKDF2HMAC(
 
 key = base64.urlsafe_b64encode(kdf.derive(password))
 f = Fernet(key)
-token = f.encrypt("".encode())
+token = f.encrypt("NVT12-KZ000-ZG220-RSITC-0BVH9".encode())
 #token = f.encrypt("aaaaa-bbbbb-ccccc-ddddd-eeeee".encode())
 
 with open('nvivo.key','w+') as file:
