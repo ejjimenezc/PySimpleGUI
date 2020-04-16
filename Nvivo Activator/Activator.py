@@ -9,10 +9,11 @@ import subprocess
 import base64   
 import os
 
+#Global Variables
 NVIVO = r'C:\Program Files\QSR\NVivo 12\nvivo'
 KEY = "9aSa-nUrp21l7I0FQcBHrtinmaiB56G7-ZXzJTNpjj8="
 
-# Please check Demo programs for better examples of launchers      
+#Methods     
 def ExecuteCommandSubprocess(command, *args):      
     try:      
         sp = subprocess.Popen([command, *args], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)      
@@ -39,29 +40,59 @@ def createXML(fields=None,data=None):
         child = ET.SubElement(pointer,f_key)
         child.text = data[f_key]
     return tree
-    
-fields_list =  (( 'FirstName','First Name*',True),
-                ( 'LastName','Last Name*',True),
-                ( 'Email','Email*',False),
-                ( 'Phone','Phone',False),
-                ( 'Fax','Fax',False),
-                ( 'JobTitle','Job Title',False),
-                ( 'Sector','Sector',False),
-                ( 'Industry','Industry',False),
-                ( 'Role','Role',False),
-                ( 'Department','Department',False),
-                ( 'Organization','Organization',False),
-                ( 'City','City',False),
-                ( 'Country','Country',True),
-                ( 'State','State',False) )
+   
+fields_list =  (( 'FirstName','First Name*','bold'),
+                ( 'LastName','Last Name*','bold'),
+                ( 'Email','Email*','bold'),
+                ( 'Phone','Phone',''),
+                ( 'Fax','Fax',''),
+                ( 'JobTitle','Job Title',''),
+                ( 'Sector','Sector',''),
+                ( 'Industry','Industry',''),
+                ( 'Role','Role',''),
+                ( 'Department','Department',''),
+                ( 'Organization','Organization',''),
+                ( 'City','City',''),
+                ( 'Country','Country*','bold'),
+                ( 'State','State','') )
 
+#UI
+sg.theme('Dark Blue 3')
 
-layout = []
-layout.append( [sg.Text('Please enter your Activation Data')] )
-layout.extend( [ [ sg.Text(field[1],size=(15, 1)), sg.InputText(key=field[0])] for field in fields_list ] )
-layout.append( [sg.Text('Serial data',size=(15, 1)),sg.InputText(key='serial')] )
-layout.extend( [ [sg.Output(size=(88, 10))],      
-                 [sg.Button('Replace'),sg.Button('Activate'), sg.Button('Deactivate'), sg.Button('Exit')] ] )
+tab1,tab2,tab3,tab4 =  [] , [] , [], []
+
+tab1.extend([
+    [sg.Text('Please enter your license:')],
+    [sg.Multiline(key='serial',size=(40, 5))]
+])
+
+tab2.append([sg.Text('Insert activation data:')])
+
+col1 = [[   
+        sg.Text(field[1],size=(10, 1),font=('Helvetica', 10, field[2])), 
+        sg.Input(key=field[0],size=(25, 1))
+    ] for field in fields_list[:int(len(fields_list)/2)]]
+col2 = [[   
+        sg.Text(field[1],size=(10, 1),font=('Helvetica', 10, field[2])), 
+        sg.Input(key=field[0],size=(25, 1))
+    ] for field in fields_list[int(len(fields_list)/2):]]
+tab2.extend([
+    [sg.Column(col1),sg.Column(col2)],
+    [sg.Button("Activate")]
+])
+
+tab3.extend([
+    [sg.Text('Click on the button to deactivate the current license.')],
+    [sg.Button('Deactivate',key="deactivateBtn")]
+])
+
+layout = [  [sg.TabGroup([
+                [   sg.Tab('Replace', tab1), 
+                    sg.Tab('Activate', tab2),
+                    sg.Tab('Deactivate', tab3),
+                    sg.Tab('Settings', tab4)  ]
+            ])],
+            [sg.Button('Exit',key='exitBtn')]]
 
 window = sg.Window('NVIVO Activation', layout)      
 
@@ -69,7 +100,8 @@ window = sg.Window('NVIVO Activation', layout)
 
 while True:      
   (event, values) = window.read()
-  if event == 'Exit'  or event is None:      
+  print(event)
+  if event == 'exitBtn'  or event is None:      
       break # exit button clicked    
       
   if event == 'Replace':
@@ -89,5 +121,5 @@ while True:
     ExecuteCommandSubprocess(NVIVO,"-a",fname)
     os.remove(fname)
     
-  elif event == 'Deactivate':
+  elif event == 'deactivateBtn':
     ExecuteCommandSubprocess(NVIVO,"-deactivate")
