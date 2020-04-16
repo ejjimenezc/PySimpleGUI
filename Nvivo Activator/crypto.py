@@ -1,27 +1,40 @@
-import base64
-import os
-from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet
+import PySimpleGUI as sg     
+import base64
+import os
 
-password = "nvivo12".encode()
-salt = "securesalt".encode()
-#salt = os.urandom(16)
-kdf = PBKDF2HMAC(
-    algorithm=hashes.SHA256(),
-    length=32,
-    salt=salt,
-    iterations=100000,
-    backend=default_backend()
-)
+def gen_key_lic(password,salt,msg):
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt.encode(),
+        iterations=100000,
+        backend=default_backend()
+    )
 
-key = base64.urlsafe_b64encode(kdf.derive(password))
-f = Fernet(key)
-token = f.encrypt("NVT12-KZ000-ZG220-RSITC-0BVH9".encode())
-#token = f.encrypt("aaaaa-bbbbb-ccccc-ddddd-eeeee".encode())
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    f = Fernet(key)
+    token = f.encrypt(msg.encode())
+    return key.decode(),token.decode()
 
-with open('nvivo.key','w+') as file:
-        file.write(key.decode())
-with open('nvivo.lic','w+') as file:
-        file.write(token.decode())
+
+layout = [
+    [sg.Text("Message",size=(10,1)),sg.In(key="msg")],
+    [sg.Text("Password",size=(10,1)),sg.In("nvivo12",key="pass")],
+    [sg.Text("Salt",size=(10,1)),sg.In("securesalt",key="salt")],
+    [sg.Button("Generate",key="generateBtn")],
+    [sg.Text("Key",size=(10,1)),sg.Output(key="key",size=(50,1))],
+    [sg.Text("License",size=(10,1)),sg.Output(key="output",size=(50,1))]
+]
+
+window = sg.Window('Generate Key',layout)
+
+while True:      
+    (event, values) = window.read()
+    if event == "generateBtn":
+        nkey,npass = gen_key_lic(values["pass"],values["salt"],values["msg"])
+        window['key'].update(nkey)
+        window['output'].update(npass)

@@ -63,7 +63,8 @@ tab1,tab2,tab3,tab4 =  [] , [] , [], []
 
 tab1.extend([
     [sg.Text('Please enter your license:')],
-    [sg.Multiline(key='serial',size=(40, 5))]
+    [sg.Multiline(key='serial',size=(80, 1))],
+    [sg.Button("Replace",key="replaceBtn")]
 ])
 
 tab2.append([sg.Text('Insert activation data:')])
@@ -78,7 +79,7 @@ col2 = [[
     ] for field in fields_list[int(len(fields_list)/2):]]
 tab2.extend([
     [sg.Column(col1),sg.Column(col2)],
-    [sg.Button("Activate")]
+    [sg.Button("Activate",key="activateBtn")]
 ])
 
 tab3.extend([
@@ -104,12 +105,12 @@ while True:
   if event == 'exitBtn'  or event is None:      
       break # exit button clicked    
       
-  if event == 'Replace':
+  if event == 'replaceBtn':
     #lic = decrypt(values["serial"])
     lic = values["serial"]
     ExecuteCommandSubprocess(NVIVO,"-i",lic)
     
-  elif event == 'Activate':
+  elif event == 'activateBtn':
     xml = createXML(fields=fields_list,data=values)
     tempf, fname = mkstemp(text=True)
     os.close(tempf)
