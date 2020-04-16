@@ -40,7 +40,7 @@ def createXML(fields=None,data=None):
         child.text = data[f_key]
     return tree
     
-fields_list =   ( ( 'FirstName','First Name*',True),
+fields_list =  (( 'FirstName','First Name*',True),
                 ( 'LastName','Last Name*',True),
                 ( 'Email','Email*',False),
                 ( 'Phone','Phone',False),
@@ -61,7 +61,7 @@ layout.append( [sg.Text('Please enter your Activation Data')] )
 layout.extend( [ [ sg.Text(field[1],size=(15, 1)), sg.InputText(key=field[0])] for field in fields_list ] )
 layout.append( [sg.Text('Serial data',size=(15, 1)),sg.InputText(key='serial')] )
 layout.extend( [ [sg.Output(size=(88, 10))],      
-                 [sg.Button('Replace'),sg.Button('Activate'), sg.Button('Deactivate'), sg.Button('EXIT')] ] )
+                 [sg.Button('Replace'),sg.Button('Activate'), sg.Button('Deactivate'), sg.Button('Exit')] ] )
 
 window = sg.Window('NVIVO Activation', layout)      
 
@@ -69,44 +69,25 @@ window = sg.Window('NVIVO Activation', layout)
 
 while True:      
   (event, values) = window.read()
-  if event == 'EXIT'  or event is None:      
+  if event == 'Exit'  or event is None:      
       break # exit button clicked    
       
   if event == 'Replace':
-    serial = values["serial"]
-    xml = createXML(fields=fields_list,data=values)
-    
-    tempf, fname = mkstemp(text=True)
-    os.close(tempf)
-    
-    with open(fname, 'wb') as f:
-        f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
-        xml.write(f, xml_declaration=False, encoding='utf-8')
-        
-    lic = decrypt(serial)
-
-    #print(NVIVO,"-i",lic,"-a",fname)
-
-    ExecuteCommandSubprocess(NVIVO,"-i",lic,"-a",fname)
-    
-    os.remove(fname)
+    #lic = decrypt(values["serial"])
+    lic = values["serial"]
+    ExecuteCommandSubprocess(NVIVO,"-i",lic)
     
   elif event == 'Activate':
     xml = createXML(fields=fields_list,data=values)
-    
     tempf, fname = mkstemp(text=True)
-    print(tempf,fname)
     os.close(tempf)
     
     with open(fname, 'wb') as f:
         f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
         xml.write(f, xml_declaration=False, encoding='utf-8')
         
-    #print(NVIVO,"-a",fname)
     ExecuteCommandSubprocess(NVIVO,"-a",fname)
-    
     os.remove(fname)
     
   elif event == 'Deactivate':
-    #print(NVIVO,"-deactivate")
     ExecuteCommandSubprocess(NVIVO,"-deactivate")
