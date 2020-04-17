@@ -12,6 +12,10 @@ import os
 #Global Variables
 NVIVO = r'C:\Program Files\QSR\NVivo 12\nvivo'
 KEY = "9aSa-nUrp21l7I0FQcBHrtinmaiB56G7-ZXzJTNpjj8="
+COUNTRIES = []
+
+with open("AcceptedCountryFormat.txt","r") as cf:
+    COUNTRIES = cf.readlines()
 
 #Methods     
 def ExecuteCommandSubprocess(command, *args):      
@@ -59,41 +63,63 @@ fields_list =  (( 'FirstName','First Name*','bold'),
 #UI
 sg.theme('Dark Blue 3')
 
-tab1,tab2,tab3,tab4 =  [] , [] , [], []
+tabA,tabB,tabC,tabI,tabS =  [] , [] , [], [], []
 
-tab1.extend([
+#Info
+tabI.extend([
+    [sg.Text(   'Use this app to manage your Nvivo Liscense.')],
+    [sg.Text(   'In the tab "Replace", you can actually install a '+
+                'license key or replace the current one.')],
+    [sg.Text(   'Use the tab "Activate" to fill with your personal info and '+
+                'activate the product.')],
+    [sg.Text(   'In the tab "Deactivate", you can deactivate the current '+
+                'activated license to use it in another PC.')],
+])
+
+#Replace license key
+tabA.extend([
     [sg.Text('Please enter your license:')],
     [sg.Multiline(key='serial',size=(80, 1))],
     [sg.Button("Replace",key="replaceBtn")]
 ])
 
-tab2.append([sg.Text('Insert activation data:')])
+tabA.append([sg.Text('Insert activation data:')])
 
-col1 = [[   
-        sg.Text(field[1],size=(10, 1),font=('Helvetica', 10, field[2])), 
-        sg.Input(key=field[0],size=(25, 1))
-    ] for field in fields_list[:int(len(fields_list)/2)]]
-col2 = [[   
-        sg.Text(field[1],size=(10, 1),font=('Helvetica', 10, field[2])), 
-        sg.Input(key=field[0],size=(25, 1))
-    ] for field in fields_list[int(len(fields_list)/2):]]
-tab2.extend([
-    [sg.Column(col1),sg.Column(col2)],
+#Activation Data
+afields = []
+for i in range(len(fields_list)):
+    if(fields_list[i][0]=='Country'):
+        afields.append([
+            sg.Text(fields_list[i][1],size=(10, 1),font=('Helvetica', 10, fields_list[i][2])), 
+            sg.Combo(COUNTRIES,key=fields_list[i][0],size=(25, 1))
+        ])  
+    afields.append([
+        sg.Text(fields_list[i][1],size=(10, 1),font=('Helvetica', 10, fields_list[i][2])), 
+        sg.Input(key=fields_list[i][0],size=(25, 1))
+    ])
+x = len(afields)
+tabB.extend([
+    [sg.Column(afields[:int(x/2)]),sg.Column(afields[int(x/2):])],
     [sg.Button("Activate",key="activateBtn")]
 ])
 
-tab3.extend([
+#Deactivate current license
+tabC.extend([
     [sg.Text('Click on the button to deactivate the current license.')],
     [sg.Button('Deactivate',key="deactivateBtn")]
 ])
 
 layout = [  [sg.TabGroup([
-                [   sg.Tab('Replace', tab1), 
-                    sg.Tab('Activate', tab2),
-                    sg.Tab('Deactivate', tab3),
-                    sg.Tab('Settings', tab4)  ]
+                [   sg.Tab('Info', tabI), 
+                    sg.Tab('Replace', tabA), 
+                    sg.Tab('Activate', tabB),
+                    sg.Tab('Deactivate', tabC),
+                    sg.Tab('Settings', tabS)  ]
             ])],
             [sg.Button('Exit',key='exitBtn')]]
+
+
+sg.Print('Nvivo Activator', do_not_reroute_stdout=False)
 
 window = sg.Window('NVIVO Activation', layout)      
 
@@ -101,13 +127,12 @@ window = sg.Window('NVIVO Activation', layout)
 
 while True:      
   (event, values) = window.read()
-  print(event)
   if event == 'exitBtn'  or event is None:      
       break # exit button clicked    
       
   if event == 'replaceBtn':
-    #lic = decrypt(values["serial"])
-    lic = values["serial"]
+    lic = decrypt(values["serial"])
+    #lic = values["serial"]
     ExecuteCommandSubprocess(NVIVO,"-i",lic)
     
   elif event == 'activateBtn':
