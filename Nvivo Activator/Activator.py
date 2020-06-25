@@ -135,7 +135,7 @@ layout = [  [sg.TabGroup([
                     sg.Tab('Settings', tabS),
                     sg.Tab('Log', tabL)  ]
             ])],
-            [sg.Button('Exit',key='exitBtn'),sg.B("print")]]
+            [sg.Button('Exit',key='exitBtn'),]]#sg.B("print")]]
 
 
 #sg.Print('Nvivo Activator', do_not_reroute_stdout=False)
