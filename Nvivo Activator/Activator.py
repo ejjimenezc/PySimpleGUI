@@ -68,7 +68,7 @@ tabA,tabS =  [] , []
 
 tabA.extend([
     [sg.Text('Please select your license file:')],
-    [sg.Text('License:', size=(10, 1)), sg.Input(LICENSE_FILE,key="license_path",size=(50,1)), sg.FileBrowse(key="licensepath")]
+    [sg.Text('License:', size=(10, 1)), sg.Input(LICENSE_FILE,key="license_path",size=(60,1)), sg.FileBrowse(key="licensepath")]
 ])
 
 #Activation Data
@@ -89,20 +89,21 @@ x = len(afields)
 tabA.append([sg.Text('Insert activation data:')])
 tabA.extend([
     [sg.Column(afields[:int(x/2)]),sg.Column(afields[int(x/2):])],
-    [sg.Button("Activate",key="activateBtn"),sg.Button("Replace",key="replaceBtn"),sg.Button('Deactivate',key="deactivateBtn")]
+    [sg.Button("Activate Software",key="activateBtn",size=(16,1)),sg.Button('Deactivate License',key="deactivateBtn",size=(16,1)),
+    sg.Button("Install License",key="installLic",size=(16,1)),sg.Button("Activate License",key="activateLic",size=(16,1))]
 ])
 
 # Settings
 tabS.extend([
     [sg.T("Nvivo Executable Path:")],
-    [sg.Text('Nvivo Path', size=(10, 1)), sg.Input(NVIVO_PATH,key="file_path",size=(50,1)), sg.FileBrowse(key="file")],
+    [sg.Text('Nvivo Path', size=(10, 1)), sg.Input(NVIVO_PATH,key="file_path",size=(60,1)), sg.FileBrowse(key="file")],
     [sg.T("Proxy Settings")],
     [sg.Checkbox("Enable Proxy:",default=False, key="proxyT")],
     [sg.T("Username:",size=(10,1)),sg.I(size=(50,1),key="proxyU")],
     [sg.T("Password:",size=(10,1)),sg.I(size=(50,1),key="proxyP")],
     [sg.T("Domain:",size=(10,1)),sg.I(size=(50,1),key="proxyD")],
     [sg.T("Log")],
-    [sg.Output(size=(70,15))]
+    [sg.Output(size=(80,5))]
 ])
 
 # Merge all settings
@@ -110,7 +111,7 @@ layout = [  [sg.TabGroup([
                 [   sg.Tab('Activation', tabA),
                     sg.Tab('Settings', tabS) ]
             ])],
-            [sg.Button('Exit',key='exitBtn'),]]
+            [sg.Button('Exit',key='exitBtn',size=(15,1)),]]
 
 
 #sg.Print('Nvivo Activator', do_not_reroute_stdout=False)
@@ -136,13 +137,12 @@ while True:
         if values["proxyD"].replace(" ", "")!="":
             proxy_settings.extend(["-d",values["proxyD"]])  
 
-    if event == 'replaceBtn':
+    if event == 'installLic':
         lic = decrypt(license_path)
-        print(lic)
-        cmd = [nvivo_path,"-i",lic]
+        cmd = ["-i",lic]
         ExecuteCommandSubprocess(nvivo_path,*cmd)
 
-    elif event == 'activateBtn':
+    if event == 'activateLic':
         xml = createXML(fields=fields_list,data=values)
         tempf, fname = mkstemp(text=True)
         os.close(tempf)
@@ -154,10 +154,20 @@ while True:
         cmd = ["-a",fname] + proxy_settings
         ExecuteCommandSubprocess(nvivo_path,*cmd)
         os.remove(fname)
+        
+    elif event == 'activateBtn':
+        xml = createXML(fields=fields_list,data=values)
+        tempf, fname = mkstemp(text=True)
+        os.close(tempf)
+
+        with open(fname, 'wb') as f:
+            f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
+            xml.write(f, xml_declaration=False, encoding='utf-8')
 
         lic = decrypt(license_path)
-        cmd = [nvivo_path,"-i",lic]
+        cmd = ["-i",lic,"-a",fname] + proxy_settings
         ExecuteCommandSubprocess(nvivo_path,*cmd)
+        os.remove(fname)
 
     elif event == 'deactivateBtn':
         cmd = ["-deactivate"] + proxy_settings

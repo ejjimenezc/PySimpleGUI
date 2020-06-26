@@ -9,7 +9,7 @@ DEFAULT_FERNET_KEY = "O_ZYxyl433xKrZwCG3y7tUEEouZyLJeZmzITsLJ8rzU="
 DEFAULT_SERIAL = '11111-22222-33333-44444-55555'
 
 COL1 = 13
-COL2 = 50
+COL2 = 30
 
 def savefile(file_path,encrypted_data):
     with open(file_path, 'wb') as f:
@@ -22,7 +22,7 @@ layout = [
     [sg.Text("License Filename",size=(COL1,1)),sg.In(DEFAULT_FILENAME,key="file_name",size=(COL2,1))],
     [sg.Button("New key",key="gkey",size=(COL1,1)),sg.Input(DEFAULT_FERNET_KEY,key="keyOutput",size=(COL2,1))],
     [sg.Text("Encrypted Serial",size=(COL1,1)),sg.Input(key="encSerial",size=(COL2,1))],
-    [sg.Button("Generate",key="generateBtn"),sg.Button("Exit")]
+    [sg.Button("Generate",key="generateBtn",size=(20,1)),sg.Button("Exit",size=(20,1))]
 ]
 
 sg.theme('Dark Blue 3')
