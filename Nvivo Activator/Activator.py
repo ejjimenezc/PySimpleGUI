@@ -46,20 +46,12 @@ def createXML(fields=None,data=None):
         child.text = data[f_key]
     return tree
    
-fields_list =  (( 'FirstName','First Name*','bold'),
-                ( 'LastName','Last Name*','bold'),
-                ( 'Email','Email*','bold'),
-                ( 'Phone','Phone',''),
-                ( 'Fax','Fax',''),
-                ( 'JobTitle','Job Title',''),
-                ( 'Sector','Sector',''),
-                ( 'Industry','Industry',''),
-                ( 'Role','Role',''),
-                ( 'Department','Department',''),
-                ( 'Organization','Organization',''),
-                ( 'City','City',''),
-                ( 'Country','Country*','bold'),
-                ( 'State','State','') )
+fields_list =  (( 'FirstName','Nombre*','bold'),
+                ( 'LastName','Apellido*','bold'),
+                ( 'Email','Correo*','bold'),
+                ( 'Phone','Telefono*',''),
+                ( 'Organization','Organizacion',''),
+                ( 'Country','Pais*','bold') )
 
 #UI
 sg.theme('Dark Blue 3')
@@ -67,8 +59,9 @@ sg.theme('Dark Blue 3')
 tabA,tabS =  [] , []
 
 tabA.extend([
-    [sg.Text('Please select your license file:')],
-    [sg.Text('License:', size=(10, 1)), sg.Input(LICENSE_FILE,key="license_path",size=(60,1)), sg.FileBrowse(key="licensepath")]
+    [sg.Text('Seleccione el archivo de licencia:')],
+    [sg.Text('Licencia:', size=(10, 1)), sg.Input(LICENSE_FILE,key="license_path",size=(48,1)), 
+    sg.FileBrowse(key="licensepath")]
 ])
 
 #Activation Data
@@ -77,39 +70,51 @@ for i in range(len(fields_list)):
     if(fields_list[i][0]=='Country'):
         afields.append([
             sg.Text(fields_list[i][1],size=(10, 1),font=('Helvetica', 10, fields_list[i][2])), 
-            sg.Combo(COUNTRIES,key=fields_list[i][0],size=(25, 1))
+            sg.Combo(COUNTRIES,key=fields_list[i][0],size=(18, 1))
         ])
         continue
     afields.append([
         sg.Text(fields_list[i][1],size=(10, 1),font=('Helvetica', 10, fields_list[i][2])), 
-        sg.Input(key=fields_list[i][0],size=(25, 1))
+        sg.Input(key=fields_list[i][0],size=(20, 1))
     ])
 
 x = len(afields)
-tabA.append([sg.Text('Insert activation data:')])
+tabA.append([sg.Text('Ingrese los siguientes datos, necesarios para la activacion:')])
 tabA.extend([
-    [sg.Column(afields[:int(x/2)]),sg.Column(afields[int(x/2):])],
-    [sg.Button("Activate Software",key="activateBtn",size=(16,1)),sg.Button('Deactivate License',key="deactivateBtn",size=(16,1)),
-    sg.Button("Install License",key="installLic",size=(16,1)),sg.Button("Activate License",key="activateLic",size=(16,1))]
+    [sg.Column(afields[:int(x/2)]),sg.Column(afields[int(x/2):])]
 ])
+tabA.append([sg.Text('Darle click al siguiente boton para realizar la activacion')])
+tabA.append([sg.Button("Activar Nvivo",key="activateBtn",size=(40,1))])
 
 # Settings
+
+settings_frame = [
+    [sg.T("Seleccione la ubicacion del ejecutable de Nvivo:")],
+    [sg.Text('Ruta de Instalacion', size=(10, 1)), 
+        sg.Input(NVIVO_PATH,key="file_path",size=(48,1)), 
+        sg.FileBrowse(key="file")]]
+    
+proxy_frame = [
+    [sg.Checkbox("Habilitar proxy:",default=False, key="proxyT")],
+    [sg.T("Username:",size=(10,1)),sg.I(size=(20,1),key="proxyU"),
+        sg.T("Password:",size=(10,1)),sg.I(size=(21,1),key="proxyP")],
+    [sg.T("Domain:",size=(10,1)),sg.I(size=(20,1),key="proxyD")]]
+    
+buttons_frame = [
+    [sg.Button('Desactivar licencia',key="deactivateBtn",size=(19,1)),
+    sg.Button("Instalar licencia",key="installLic",size=(19,1)),
+    sg.Button("Activar licencia",key="activateLic",size=(19,1))]]
+
 tabS.extend([
-    [sg.T("Nvivo Executable Path:")],
-    [sg.Text('Nvivo Path', size=(10, 1)), sg.Input(NVIVO_PATH,key="file_path",size=(60,1)), sg.FileBrowse(key="file")],
-    [sg.T("Proxy Settings")],
-    [sg.Checkbox("Enable Proxy:",default=False, key="proxyT")],
-    [sg.T("Username:",size=(10,1)),sg.I(size=(50,1),key="proxyU")],
-    [sg.T("Password:",size=(10,1)),sg.I(size=(50,1),key="proxyP")],
-    [sg.T("Domain:",size=(10,1)),sg.I(size=(50,1),key="proxyD")],
-    [sg.T("Log")],
-    [sg.Output(size=(80,5))]
+    [sg.Frame('Ejecutable de Nvivo', settings_frame)],
+    [sg.Frame('Configuracion de Proxy', proxy_frame)],
+    [sg.Frame('Extra', buttons_frame)]
 ])
 
 # Merge all settings
 layout = [  [sg.TabGroup([
-                [   sg.Tab('Activation', tabA),
-                    sg.Tab('Settings', tabS) ]
+                [   sg.Tab('Activacion', tabA, element_justification="center"),
+                    sg.Tab('Configuracion', tabS, element_justification="left") ]
             ])],
             [sg.Button('Exit',key='exitBtn',size=(15,1)),]]
 
