@@ -4,22 +4,33 @@ from tempfile import mkstemp
 import PySimpleGUI as sg      
 import subprocess   
 import base64   
+import sys
 import os
 
 #Global Variables
+
+EXEPATH = os.path.dirname(sys.executable)
+
 NVIVO_PATH = r'C:\Program Files\QSR\NVivo 12\nvivo.exe'
-LICENSE_FILE = r'nvivolicense.lic'
+LICENSE_FILE = r''
 KEY = "O_ZYxyl433xKrZwCG3y7tUEEouZyLJeZmzITsLJ8rzU="
 COUNTRIES = []
 
-with open("AcceptedCountryFormat.txt","r") as cf:
+countrypath = ''
+
+if os.path.isfile('./AcceptedCountryFormat.txt'):
+    countrypath = './AcceptedCountryFormat.txt'
+else:
+    EXEPATH+"\AcceptedCountryFormat.txt"
+
+with open(countrypath,"r") as cf:
     COUNTRIES = cf.readlines()
 
 #Methods     
 def ExecuteCommandSubprocess(command, *args):
-    print(" ".join((command,)+args))
+    #print(" ".join((command,)+args))
     try:      
-        sp = subprocess.Popen([command, *args], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)      
+        sp = subprocess.Popen([command, *args], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,stdin=subprocess.PIPE)      
         out, err = sp.communicate()    
         if out:      
             print(out.decode("utf-8"))      
@@ -29,7 +40,6 @@ def ExecuteCommandSubprocess(command, *args):
         pass     
 
 def decrypt(license_path):
-    print(license_path)
     with open(license_path, 'rb') as f:
         data = f.read()
     f = Fernet(KEY.encode())
@@ -56,12 +66,12 @@ fields_list =  (( 'FirstName','Nombre*','bold'),
 #UI
 sg.theme('Dark Blue 3')
 
-tabA,tabS =  [] , []
+tabA,tabS, tabL =  [] , [], []
 
 tabA.extend([
     [sg.Text('Seleccione el archivo de licencia:')],
     [sg.Text('Licencia:', size=(10, 1)), sg.Input(LICENSE_FILE,key="license_path",size=(48,1)), 
-    sg.FileBrowse(key="licensepath")]
+    sg.FileBrowse('Buscar',key="licensepath")]
 ])
 
 #Activation Data
@@ -92,7 +102,7 @@ settings_frame = [
     [sg.T("Seleccione la ubicacion del ejecutable de Nvivo:")],
     [sg.Text('Ruta de Instalacion', size=(10, 1)), 
         sg.Input(NVIVO_PATH,key="file_path",size=(48,1)), 
-        sg.FileBrowse(key="file")]]
+        sg.FileBrowse('Buscar',key="file")]]
     
 proxy_frame = [
     [sg.Checkbox("Habilitar proxy:",default=False, key="proxyT")],
@@ -111,18 +121,22 @@ tabS.extend([
     [sg.Frame('Extra', buttons_frame)]
 ])
 
+tabL = [
+    [sg.Output(key='-OUTPUT-',size=(70,13))]
+]
+
 # Merge all settings
 layout = [  [sg.TabGroup([
                 [   sg.Tab('Activacion', tabA, element_justification="center"),
-                    sg.Tab('Configuracion', tabS, element_justification="left") ]
+                    sg.Tab('Configuracion', tabS, element_justification="left"),
+                    sg.Tab('Log de Acciones', tabL, element_justification="left") ]
             ])],
-            [sg.Button('Exit',key='exitBtn',size=(15,1)),]]
+            [sg.Button('Exit',key='exitBtn',size=(15,1)),sg.Button('Print',key='test',size=(15,1))]]
 
 
 #sg.Print('Nvivo Activator', do_not_reroute_stdout=False)
 
 window = sg.Window('NVIVO Activation', layout)         
-
 
 # ---===--- Loop taking in user input and using it to call scripts --- #      
 
@@ -143,11 +157,13 @@ while True:
             proxy_settings.extend(["-d",values["proxyD"]])  
 
     if event == 'installLic':
+        print("- Instalando licencia.")
         lic = decrypt(license_path)
         cmd = ["-i",lic]
         ExecuteCommandSubprocess(nvivo_path,*cmd)
 
     if event == 'activateLic':
+        print("- Activando licencia.")
         xml = createXML(fields=fields_list,data=values)
         tempf, fname = mkstemp(text=True)
         os.close(tempf)
@@ -160,7 +176,8 @@ while True:
         ExecuteCommandSubprocess(nvivo_path,*cmd)
         os.remove(fname)
         
-    elif event == 'activateBtn':
+    if event == 'activateBtn':
+        print("- Activando licencia.")
         xml = createXML(fields=fields_list,data=values)
         tempf, fname = mkstemp(text=True)
         os.close(tempf)
@@ -174,6 +191,11 @@ while True:
         ExecuteCommandSubprocess(nvivo_path,*cmd)
         os.remove(fname)
 
-    elif event == 'deactivateBtn':
+    if event == 'deactivateBtn':
+        print("- Desactivando licencia.")
         cmd = ["-deactivate"] + proxy_settings
         ExecuteCommandSubprocess(nvivo_path,*cmd)
+
+    if event == 'test':
+        lic = decrypt(license_path)
+        print(lic)
