@@ -3,9 +3,10 @@ import xml.etree.ElementTree as ET
 from tempfile import mkstemp
 import PySimpleGUI as sg      
 import subprocess   
-import base64   
+import base64
 import sys
 import os
+import re
 
 #Global Variables
 
@@ -59,10 +60,34 @@ def createXML(fields=None,data=None):
 fields_list =  (( 'FirstName','Nombre*','bold'),
                 ( 'LastName','Apellido*','bold'),
                 ( 'Email','Correo*','bold'),
-                ( 'Phone','Telefono*',''),
+                ( 'Phone','Telefono',''),
                 ( 'Organization','Organizacion',''),
                 ( 'Country','Pais*','bold') )
 
+def validation(**data):
+    if "path" in data:
+        return os.path.exists(data["path"])
+    if "data" in data:
+        check = True
+        errors = []
+        values = data["data"]
+        if not values["FirstName"]:
+            check = False
+            errors.append("- La casilla de Nombre no puede estar vacia.")
+        if not values["LastName"]:
+            check = False
+            errors.append("- La casilla de Apellido no puede estar vacia.")
+        if not re.match("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",values["Email"]):
+            check = False
+            errors.append("- La casilla de Correo no puede estar vacia.")
+        if not re.match("^[0-9]*$",values["Phone"]):
+            check = False
+            errors.append("- El telefono ingresado es invalido.")
+        if values["Country"] not in COUNTRIES:
+            check = False
+            errors.append("- El pais ingresado es invalido.")
+        return {"check":check,"errors":errors}
+    return true
 #UI
 sg.theme('Dark Blue 3')
 
@@ -88,6 +113,7 @@ for i in range(len(fields_list)):
         sg.Input(key=fields_list[i][0],size=(20, 1))
     ])
 
+
 x = len(afields)
 tabA.append([sg.Text('Ingrese los siguientes datos, necesarios para la activacion:')])
 tabA.extend([
@@ -100,7 +126,7 @@ tabA.append([sg.Button("Activar Nvivo",key="activateBtn",size=(40,1))])
 
 settings_frame = [
     [sg.T("Seleccione la ubicacion del ejecutable de Nvivo:")],
-    [sg.Text('Ruta de Instalacion', size=(10, 1)), 
+    [sg.Text('Ruta:', size=(10, 1)), 
         sg.Input(NVIVO_PATH,key="file_path",size=(48,1)), 
         sg.FileBrowse('Buscar',key="file")]]
     
@@ -129,9 +155,9 @@ tabL = [
 layout = [  [sg.TabGroup([
                 [   sg.Tab('Activacion', tabA, element_justification="center"),
                     sg.Tab('Configuracion', tabS, element_justification="left"),
-                    sg.Tab('Log de Acciones', tabL, element_justification="left") ]
-            ])],
-            [sg.Button('Exit',key='exitBtn',size=(15,1)),sg.Button('Print',key='test',size=(15,1))]]
+                    #sg.Tab('Log de Acciones', tabL, element_justification="left") ]
+]])],#])],
+            [sg.Button('Cerrar aplicacion',key='exitBtn',size=(15,1)),sg.Button('Print',key='test',size=(15,1))]]
 
 
 #sg.Print('Nvivo Activator', do_not_reroute_stdout=False)
@@ -139,6 +165,8 @@ layout = [  [sg.TabGroup([
 window = sg.Window('NVIVO Activation', layout)         
 
 # ---===--- Loop taking in user input and using it to call scripts --- #      
+
+
 
 while True:      
     (event, values) = window.read()
@@ -157,39 +185,60 @@ while True:
             proxy_settings.extend(["-d",values["proxyD"]])  
 
     if event == 'installLic':
-        print("- Instalando licencia.")
-        lic = decrypt(license_path)
-        cmd = ["-i",lic]
-        ExecuteCommandSubprocess(nvivo_path,*cmd)
+        if not os.path.exists(license_path):
+            sg.popup('Seleccione el archivo de licencia.',title="Error",
+        else:
+            print("- Instalando licencia.")
+            lic = decrypt(license_path)
+            cmd = ["-i",lic]
+            ExecuteCommandSubprocess(nvivo_path,*cmd)
 
     if event == 'activateLic':
-        print("- Activando licencia.")
-        xml = createXML(fields=fields_list,data=values)
-        tempf, fname = mkstemp(text=True)
-        os.close(tempf)
+        valida = validation(data=values)
+        if not os.path.exists(license_path):
+            sg.popup('Seleccione el archivo de licencia.',title="Error",
+            keep_on_top=True)
+        elif not valida["check"]:
+            sg.popup("Se encontraron los siguientes errores:",*valida["errors"],
+            title="Error",
+            keep_on_top=True)
+        else:                
+            print("- Activando licencia.")
+            xml = createXML(fields=fields_list,data=values)
+            tempf, fname = mkstemp(text=True)
+            os.close(tempf)
 
-        with open(fname, 'wb') as f:
-            f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
-            xml.write(f, xml_declaration=False, encoding='utf-8')
+            with open(fname, 'wb') as f:
+                f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
+                xml.write(f, xml_declaration=False, encoding='utf-8')
 
-        cmd = ["-a",fname] + proxy_settings
-        ExecuteCommandSubprocess(nvivo_path,*cmd)
-        os.remove(fname)
+            cmd = ["-a",fname] + proxy_settings
+            ExecuteCommandSubprocess(nvivo_path,*cmd)
+            os.remove(fname)
         
     if event == 'activateBtn':
-        print("- Activando licencia.")
-        xml = createXML(fields=fields_list,data=values)
-        tempf, fname = mkstemp(text=True)
-        os.close(tempf)
+        valida = validation(data=values)
+        if not os.path.exists(license_path):
+            sg.popup('Seleccione el archivo de licencia.',title="Error",
+            keep_on_top=True)
+        elif not valida["check"]:
+            sg.popup("Se encontraron los siguientes errores:",*valida["errors"],
+            title="Error",
+            keep_on_top=True)
+        else:
+            print("- Activando licencia.")
+            xml = createXML(fields=fields_list,data=values)
+            tempf, fname = mkstemp(text=True)
+            os.close(tempf)
 
-        with open(fname, 'wb') as f:
-            f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
-            xml.write(f, xml_declaration=False, encoding='utf-8')
+            with open(fname, 'wb') as f:
+                f.write(b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>')
+                xml.write(f, xml_declaration=False, encoding='utf-8')
 
-        lic = decrypt(license_path)
-        cmd = ["-i",lic,"-a",fname] + proxy_settings
-        ExecuteCommandSubprocess(nvivo_path,*cmd)
-        os.remove(fname)
+            lic = decrypt(license_path)
+            cmd = ["-i",lic,"-a",fname] + proxy_settings
+            ExecuteCommandSubprocess(nvivo_path,*cmd)
+            os.remove(fname)
 
     if event == 'deactivateBtn':
         print("- Desactivando licencia.")
@@ -197,5 +246,4 @@ while True:
         ExecuteCommandSubprocess(nvivo_path,*cmd)
 
     if event == 'test':
-        lic = decrypt(license_path)
-        print(lic)
+        validation(data=values)
