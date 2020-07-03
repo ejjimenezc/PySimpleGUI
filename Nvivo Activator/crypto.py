@@ -25,7 +25,7 @@ layout = [
     [sg.Button("Generar",key="generateBtn",size=(20,1)),sg.Button("Salir",key='Exit',size=(20,1))]
 ]
 
-sg.theme('Dark Blue 3')
+
 window = sg.Window('Encrypt License Key',layout)
 while True:      
     (event, values) = window.read()

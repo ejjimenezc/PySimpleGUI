@@ -27,6 +27,9 @@ else:
 with open(countrypath,"r") as cf:
     COUNTRIES = cf.readlines()
 
+
+sg.theme('LightGreen3')
+
 #Methods     
 def ExecuteCommandSubprocess(command, *args):
     #print(" ".join((command,)+args))
@@ -154,6 +157,7 @@ tabL = [
 ]
 
 # Merge all settings
+
 layout = [  [sg.TabGroup([
                 [   sg.Tab('Activacion', tabA, element_justification="center"),
                     sg.Tab('Configuracion', tabS, element_justification="left"),
