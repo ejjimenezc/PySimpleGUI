@@ -34,9 +34,9 @@ def ExecuteCommandSubprocess(command, *args):
         sp = subprocess.Popen([command, *args], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,stdin=subprocess.PIPE)      
         out, err = sp.communicate()    
         if out:      
-            print(sg.popup(out.decode("utf-8"),title="Mensage"))     
+            sg.popup(out.decode("utf-8"),title="Mensage")   
         if err:      
-            print(sg.popup(err.decode("utf-8"),title="Mensage"))  
+            print(err.decode("utf-8"),title="Mensage")
     except:      
         pass     
 
@@ -65,6 +65,8 @@ fields_list =  (( 'FirstName','Nombre*','bold'),
                 ( 'Country','Pais*','bold') )
 
 def validation(**data):
+    if "nvivopath" in data:
+        return os.path.exists(NVIVO_PATH)
     if "path" in data:
         return os.path.exists(data["path"])
     if "data" in data:
@@ -179,7 +181,10 @@ def gui():
                 proxy_settings.extend(["-d",values["proxyD"]])  
 
         if event == 'installLic':
-            if not os.path.exists(license_path):
+            if not os.path.exists(nvivo_path):
+                sg.popup('No se encuentra el ejecutable de Nvivo.',
+                'Seleccione la ubicacion desde Configuracion.',title="Error")
+            elif not os.path.exists(license_path):
                 sg.popup('Seleccione el archivo de licencia.',title="Error")
             else:
                 print("- Instalando licencia.")
@@ -189,7 +194,10 @@ def gui():
 
         if event == 'activateLic':
             valida = validation(data=values)
-            if not os.path.exists(license_path):
+            if not os.path.exists(nvivo_path):
+                sg.popup('No se encuentra el ejecutable de Nvivo.',
+                'Seleccione la ubicacion desde Configuracion.',title="Error")
+            elif not os.path.exists(license_path):
                 sg.popup('Seleccione el archivo de licencia.',title="Error",
                 keep_on_top=True)
             elif not valida["check"]:
@@ -212,7 +220,10 @@ def gui():
             
         if event == 'activateBtn':
             valida = validation(data=values)
-            if not os.path.exists(license_path):
+            if not os.path.exists(nvivo_path):
+                sg.popup('No se encuentra el ejecutable de Nvivo.',
+                'Seleccione la ubicacion desde Configuracion.',title="Error")
+            elif not os.path.exists(license_path):
                 sg.popup('Seleccione el archivo de licencia.',title="Error",
                 keep_on_top=True)
             elif not valida["check"]:
@@ -235,6 +246,9 @@ def gui():
                 os.remove(fname)
 
         if event == 'deactivateBtn':
+            if not os.path.exists(nvivo_path):
+                sg.popup('No se encuentra el ejecutable de Nvivo.',
+                'Seleccione la ubicacion desde Configuracion.',title="Error")
             print("- Desactivando licencia.")
             cmd = ["-deactivate"] + proxy_settings
             ExecuteCommandSubprocess(nvivo_path,*cmd)
