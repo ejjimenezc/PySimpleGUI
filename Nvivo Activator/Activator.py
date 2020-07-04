@@ -28,8 +28,6 @@ with open(countrypath,"r") as cf:
     COUNTRIES = cf.readlines()
 
 
-sg.theme('LightGreen3')
-
 #Methods     
 def ExecuteCommandSubprocess(command, *args):
     #print(" ".join((command,)+args))
@@ -82,9 +80,9 @@ def validation(**data):
         if not values["LastName"]:
             check = False
             errors.append("- La casilla de Apellido no puede estar vacia.")
-        if not re.match("(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",values["Email"]):
+        if not re.match("^(\w+)@(\w+)\.([a-z]{2,8})([\.a-z]{2,8})?$",values["Email"]):
             check = False
-            errors.append("- La casilla de Correo no puede estar vacia.")
+            errors.append("- El correo es invalido.")
         if not re.match("^[0-9]*$",values["Phone"]):
             check = False
             errors.append("- El telefono ingresado es invalido.")
@@ -92,7 +90,11 @@ def validation(**data):
             check = False
             errors.append("- El pais ingresado es invalido.")
         return {"check":check,"errors":errors}
-    return true
+    if "email" in data:
+        print(data["email"]["Email"])
+        if not re.match("^(\w+)@(unal.edu.co)$",data["email"]["Email"]):
+            return False
+    return True
 #UI
 sg.theme('Dark Blue 3')
 
@@ -153,7 +155,7 @@ tabS.extend([
 ])
 
 tabL = [
-    [sg.Output(key='-OUTPUT-',size=(70,13))]
+    #[sg.Output(key='-OUTPUT-',size=(70,13))]
 ]
 
 # Merge all settings
@@ -174,6 +176,9 @@ def gui():
         license_path = values["licensepath"]
         proxy_settings = []
 
+        
+        emailValidation = validation(email=values)
+
         if event == 'exitBtn'  or event is None:      
             break # exit button clicked  
 
@@ -190,6 +195,9 @@ def gui():
                 'Seleccione la ubicacion desde Configuracion.',title="Error")
             elif not os.path.exists(license_path):
                 sg.popup('Seleccione el archivo de licencia.',title="Error")
+            elif not emailValidation:
+                sg.popup("El correo ingresado no es valido para realizar la activacion.",
+                keep_on_top=True)
             else:
                 print("- Instalando licencia.")
                 lic = decrypt(license_path)
@@ -207,6 +215,9 @@ def gui():
             elif not valida["check"]:
                 sg.popup("Se encontraron los siguientes errores:",*valida["errors"],
                 title="Error",
+                keep_on_top=True)
+            elif not emailValidation:
+                sg.popup("El correo ingresado no es valido para realizar la activacion.",
                 keep_on_top=True)
             else:                
                 print("- Activando licencia.")
@@ -234,6 +245,9 @@ def gui():
                 sg.popup("Se encontraron los siguientes errores:",*valida["errors"],
                 title="Error",
                 keep_on_top=True)
+            elif not emailValidation:
+                sg.popup("El correo ingresado no es valido para realizar la activacion.",
+                keep_on_top=True)
             else:
                 print("- Activando licencia.")
                 xml = createXML(fields=fields_list,data=values)
@@ -253,9 +267,13 @@ def gui():
             if not os.path.exists(nvivo_path):
                 sg.popup('No se encuentra el ejecutable de Nvivo.',
                 'Seleccione la ubicacion desde Configuracion.',title="Error")
-            print("- Desactivando licencia.")
-            cmd = ["-deactivate"] + proxy_settings
-            ExecuteCommandSubprocess(nvivo_path,*cmd)
+            elif not emailValidation:
+                sg.popup("El correo ingresado no es valido para realizar la activacion.",
+                keep_on_top=True)
+            else:
+                print("- Desactivando licencia.")
+                cmd = ["-deactivate"] + proxy_settings
+                ExecuteCommandSubprocess(nvivo_path,*cmd)
 
         if event == 'test':
             validation(data=values)
