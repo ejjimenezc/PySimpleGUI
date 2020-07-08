@@ -17,22 +17,31 @@ def savefile(file_path,encrypted_data):
 
 layout = [
     [sg.Text("Licencia",size=(COL1,1)),sg.In(DEFAULT_SERIAL,size=(COL2,1),key="serial")],
-    [sg.Checkbox('Generar archivo de licencia', key='check', default=False)],
-    [sg.Text("Ruta del archivo",size=(COL1,1)),sg.Input(DEFAULT_DIRNAME,key="folder_path",size=(COL2-14,1)), sg.FolderBrowse(key="folder",size=(10,1),disabled='true')],
-    [sg.Text("Nombre del archivo",size=(COL1,1)),sg.In(DEFAULT_FILENAME,key="file_name",size=(COL2,1))],
     [sg.Button("Generar llave",key="gkey",size=(COL1,1)),sg.Input(DEFAULT_FERNET_KEY,key="keyOutput",size=(COL2,1))],
     [sg.Text("Licencia encriptada",size=(COL1,1)),sg.Input(key="encSerial",size=(COL2,1))],
+    [sg.Checkbox('Generar archivo de licencia', key='check', default=False)],
+    [sg.Text("Ruta del archivo",size=(COL1,1)),sg.Input(DEFAULT_DIRNAME,disabled=True,key="folder_path",size=(COL2-14,1)), sg.FolderBrowse(key="folder",size=(10,1),disabled=True)],
+    [sg.Text("Nombre del archivo",size=(COL1,1)),sg.In(DEFAULT_FILENAME,disabled=True,key="file_name",size=(COL2,1))],
     [sg.Button("Generar",key="generateBtn",size=(20,1)),sg.Button("Salir",key='Exit',size=(20,1))]
 ]
 
 
-window = sg.Window('Encrypt License Key',layout)
+window = sg.Window('Encriptar licencia',layout)
 while True:      
-    (event, values) = window.read()
+    (event, values) = window.read(timeout=100)
     folder_path = values["folder_path"]
     file_name = values["file_name"]
     serial = values["serial"]
     keyOutput = values["keyOutput"]
+    
+    if values["check"]:
+        window['folder_path'].update(disabled=False)
+        window['file_name'].update(disabled=False)
+        window['folder'].update(disabled=False)
+    else:
+        window['folder_path'].update(disabled=True)
+        window['file_name'].update(disabled=False)
+        window['folder'].update(disabled=True)
 
     if event == 'Exit'  or event is None:      
         break # exit button clicked   
