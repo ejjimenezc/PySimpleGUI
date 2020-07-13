@@ -4,11 +4,14 @@ from tempfile import mkstemp
 import PySimpleGUI as sg      
 import subprocess   
 import base64
+import threading
+import time
 import sys
 import os
 import re
 
 #Global Variables
+message = ''    # used by thread to send back a message to the main thread
 
 EXEPATH = os.path.dirname(sys.executable)
 
@@ -41,10 +44,11 @@ domain_list = {
     "Universidad de los Andes - UNIANDES":["uniandes.edu.co","adm.uniandes.edu.co"]
 }
 
+default_org = ""
 
 NVIVO_PATH = r'C:\Program Files\QSR\NVivo 12\nvivo.exe'
 LICENSE_FILE = r''
-KEY = "O_ZYxyl433xKrZwCG3y7tUEEouZyLJeZmzITsLJ8rzU="
+KEY = ""
 COUNTRIES = []
 
 countrypath = ''
@@ -59,24 +63,32 @@ with open(countrypath,"r") as cf:
 
 
 #Methods     
+
 def ExecuteCommandSubprocess(command, *args):
     #print(" ".join((command,)+args))
+    global message
+    message = ''
     try:      
         sp = subprocess.Popen([command, *args], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,stdin=subprocess.PIPE)      
         out, err = sp.communicate()    
         if out:      
-            sg.popup(out.decode("utf-8"),title="Mensaje",keep_on_top=True)   
+            #sg.popup(out.decode("utf-8"),title="Mensaje",keep_on_top=True,auto_close=True,auto_close_duration=5)   
             print(out.decode("utf-8"))
+            message = out.decode("utf-8")
         if err:      
             print(err.decode("utf-8"))
     except:      
         pass     
 
 def decrypt(license_path):
+    decrypted = ''
     with open(license_path, 'rb') as f:
         data = f.read()
     f = Fernet(KEY.encode())
-    decrypted = f.decrypt(data).decode()
+    try:
+        decrypted = f.decrypt(data).decode()
+    except Exception as e:
+        print(e)
     return decrypted
 
 def createXML(fields=None,data=None):
@@ -127,15 +139,15 @@ def validation(**data):
         errors = []
         org = data["email"]["Organization"]
         ema = []
-        if org in domain_list:
-            ema += domain_list[org]
         if not org in domain_list:
             check = False
             errors.append("- Escoga una organización valida.")
-        domval = [re.match("^(.+)@"+dom+"$",data["email"]["Email"]) for dom in ema]
-        if not any(domval):
-            check = False
-            errors.append("- El correo ingresado no es valido para realizar la activación.")
+        else:
+            ema += domain_list[default_org]
+            domval = [re.match("^(.+)@"+dom+"$",data["email"]["Email"]) for dom in ema]
+            if not any(domval) or org != default_org:
+                check = False
+                errors.append("- El correo ingresado no es valido para realizar la activación.")
         return {"check":check,"errors":errors}
     return True
 #UI
@@ -145,7 +157,7 @@ tabA,tabS, tabL =  [] , [], []
 
 tabA.extend([
     [sg.Text('Seleccione el archivo de licencia:')],
-    [sg.Text('Licencia:', size=(10, 1)), sg.Input(LICENSE_FILE,key="license_path",size=(48,1)), 
+    [sg.Text('Licencia:', size=(10, 1)), sg.Input(LICENSE_FILE,key="license_path",size=(49,1)), 
     sg.FileBrowse('Buscar',key="licensepath")]
 ])
 
@@ -155,24 +167,25 @@ for i in range(len(fields_list)):
     if(fields_list[i][0]=='Country'):
         afields.append([
             sg.Text(fields_list[i][1],size=(10, 1),font=('Helvetica', 10, fields_list[i][2])), 
-            sg.Combo(COUNTRIES,key=fields_list[i][0],size=(54, 1))
+            sg.Combo(COUNTRIES,key=fields_list[i][0],size=(56, 1))
         ])
         continue
     elif(fields_list[i][0]=='Organization'):
         afields.append([
             sg.Text(fields_list[i][1],size=(10, 1),font=('Helvetica', 10, fields_list[i][2])), 
-            sg.Combo(list(domain_list.keys()),key=fields_list[i][0],size=(54, 1))
+            sg.Combo(list(domain_list.keys()),key=fields_list[i][0],size=(56, 1))
         ])
         continue
     afields.append([
         sg.Text(fields_list[i][1],size=(10, 1),font=('Helvetica', 10, fields_list[i][2])), 
-        sg.Input(key=fields_list[i][0],size=(56, 1))
+        sg.Input(key=fields_list[i][0],size=(20, 1))
     ])
 
 
 x = len(afields)
 tabA.append([sg.Text('Ingrese los siguientes datos, necesarios para la activación:')])
-tabA.extend(afields)
+tabA.append([sg.Column(afields[:2]),sg.Column(afields[2:4])])
+tabA.extend(afields[4:])
 tabA.append([sg.Text('Presione el siguiente botón para realizar la activación')])
 tabA.append([sg.Button("Activar Nvivo",key="activateBtn",size=(40,1))])
 
@@ -202,7 +215,7 @@ tabS.extend([
 ])
 
 tabL = [
-    #[sg.Output(key='-OUTPUT-',size=(70,13))]
+    [sg.Output(key='-OUTPUT-',size=(70,15))]
 ]
 
 # Merge all settings
@@ -214,7 +227,11 @@ layout = [  [sg.TabGroup([
 ])],
             [sg.Button('Cerrar aplicación',key='exitBtn',size=(15,1))]]#,sg.Button('Print',key='test',size=(15,1))]]
 
+
 def gui():
+
+    thread = None
+    
     window = sg.Window('Activador de NVIVO', layout)         
 
     while True:      
@@ -223,7 +240,6 @@ def gui():
         license_path = values["licensepath"]
         proxy_settings = []
 
-        
         emailValidation = validation(email=values)
 
         if event in (sg.WIN_CLOSED, 'exitBtn'):      
@@ -236,7 +252,7 @@ def gui():
             if values["proxyD"].replace(" ", "")!="":
                 proxy_settings.extend(["-d",values["proxyD"]])  
 
-        if event == 'installLic':
+        if event == 'installLic' and not thread:
 
             valida = validation(data=values)
             emailCheck = validation(email=values)
@@ -258,9 +274,11 @@ def gui():
                 print("- Instalando licencia.")
                 lic = decrypt(license_path)
                 cmd = ["-i",lic]
-                ExecuteCommandSubprocess(nvivo_path,*cmd)
+                thread = threading.Thread(target=ExecuteCommandSubprocess, args=(nvivo_path,*cmd), daemon=True)
+                thread.start()
+                #ExecuteCommandSubprocess(nvivo_path,*cmd)
 
-        if event == 'activateLic':
+        if event == 'activateLic' and not thread:
             valida = validation(data=values)
             emailCheck = validation(email=values)
             if not os.path.exists(nvivo_path):
@@ -288,10 +306,12 @@ def gui():
                     xml.write(f, xml_declaration=False, encoding='utf-8')
 
                 cmd = ["-a",fname] + proxy_settings
-                ExecuteCommandSubprocess(nvivo_path,*cmd)
+                thread = threading.Thread(target=ExecuteCommandSubprocess, args=(nvivo_path,*cmd), daemon=True)
+                thread.start()
+                #ExecuteCommandSubprocess(nvivo_path,*cmd)
                 os.remove(fname)
             
-        if event == 'activateBtn':
+        if event == 'activateBtn' and not thread:
             valida = validation(data=values)
             emailCheck = validation(email=values)
             if not os.path.exists(nvivo_path):
@@ -320,33 +340,32 @@ def gui():
 
                 lic = decrypt(license_path)
                 cmd = ["-i",lic,"-a",fname] + proxy_settings
-                ExecuteCommandSubprocess(nvivo_path,*cmd)
+                thread = threading.Thread(target=ExecuteCommandSubprocess, args=(nvivo_path,*cmd), daemon=True)
+                thread.start()
+                #ExecuteCommandSubprocess(nvivo_path,*cmd)
                 os.remove(fname)
 
-        if event == 'deactivateBtn':
+        if event == 'deactivateBtn' and not thread:
             valida = validation(data=values)
             emailCheck = validation(email=values)
-            if not os.path.exists(nvivo_path):
-                sg.popup('No se encuentra el ejecutable de Nvivo.',
-                'Seleccione la ubicacion desde Configuracion.',title="Error")
-            elif not os.path.exists(license_path):
-                sg.popup('Seleccione el archivo de licencia.',title="Error",
-                keep_on_top=True)
-            elif not valida["check"]:
-                sg.popup("Se encontraron los siguientes errores:",*valida["errors"],
-                title="Error",
-                keep_on_top=True)
-            elif not emailCheck["check"]:
-                sg.popup("Se encontraron los siguientes errores:",*emailCheck["errors"],
-                title="Error",
-                keep_on_top=True)
-            else:
-                print("- Desactivando licencia.")
-                cmd = ["-deactivate"] + proxy_settings
-                ExecuteCommandSubprocess(nvivo_path,*cmd)
+            print("- Desactivando licencia.")
+            cmd = ["-deactivate"] + proxy_settings
+            thread = threading.Thread(target=ExecuteCommandSubprocess, args=(nvivo_path,*cmd), daemon=True)
+            thread.start()
+            #ExecuteCommandSubprocess(nvivo_path,*cmd)
 
         if event == 'test':
-            validation(data=values)
+            print(decrypt(license_path))
+
+
+        if thread:                                          # If one big operation, show an animated GIF
+            sg.popup_animated(sg.DEFAULT_BASE64_LOADING_GIF, background_color=
+            'white', transparent_color='white', time_between_frames=100)
+            thread.join(timeout=0)
+            if not thread.is_alive():                       # the thread finished
+                sg.popup(message,title="Mensaje",keep_on_top=True,auto_close=True,auto_close_duration=5)
+                sg.popup_animated(None)                     # stop animination in case one is running
+                thread = None     # reset variables for next run
     window.close()
 
 if __name__ == '__main__':

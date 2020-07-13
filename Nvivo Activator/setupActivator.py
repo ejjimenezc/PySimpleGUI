@@ -4,7 +4,7 @@ from cx_Freeze import setup, Executable
 # fine tuning.
 
 includefiles = ['icon.ico', 'AcceptedCountryFormat.txt']
-packages = ['cryptography','tempfile','PySimpleGUI','subprocess','base64','sys','os']
+packages = ['cryptography','tempfile','PySimpleGUI','subprocess','base64','sys','os','threading']
 
 buildOptions = dict(packages = packages, excludes = [], include_files = includefiles)
 
@@ -17,8 +17,8 @@ executables = [
 
 setup(
     name='Activator',
-    version = '7.0.0',
-    description = 'Activador de Nvivo 12',
-    author = 'Edwin Jimenez',
+    version = '0.8.0',
+    description = 'Activador de Nvivo 12 para INACAP',
+    author = 'Software Shop',
     options = dict(build_exe = buildOptions),
     executables = executables)
